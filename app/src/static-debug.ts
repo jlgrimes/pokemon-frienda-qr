@@ -1,5 +1,6 @@
 import { buildGridText, buildThresholdPreview, extractRegionPreview } from './debug'
-import { findHighContrastRegion, tryDecode } from './scanner'
+import { findFinderAnchoredRegion } from './finder'
+import { tryDecode } from './scanner'
 
 export type StaticDebugResult = {
   source: string
@@ -23,7 +24,8 @@ export async function analyzeImageSource(source: string): Promise<StaticDebugRes
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
   const decoded = tryDecode(imageData)
-  const region = findHighContrastRegion(imageData)
+  const match = findFinderAnchoredRegion(imageData)
+  const region = match?.box
 
   if (!region) {
     return {
@@ -34,7 +36,7 @@ export async function analyzeImageSource(source: string): Promise<StaticDebugRes
       threshold144: '',
       grid: '',
       signature: '',
-      status: decoded ? 'Standard QR decoded, but no fallback region found' : 'No likely symbol region detected',
+      status: decoded ? 'Standard QR decoded, but no finder region matched' : 'No finder-like region detected',
     }
   }
 
@@ -49,7 +51,9 @@ export async function analyzeImageSource(source: string): Promise<StaticDebugRes
     threshold144: buildThresholdPreview(imageData, region, 144),
     grid: detected,
     signature,
-    status: decoded ? 'Standard QR decoded and debug crop extracted' : 'Fallback region extracted from static image',
+    status: decoded
+      ? `Standard QR decoded and finder crop extracted (score ${match.score.toFixed(2)})`
+      : `Finder-template crop extracted from static image (score ${match.score.toFixed(2)})`,
   }
 }
 
