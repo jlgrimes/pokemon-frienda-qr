@@ -5,6 +5,7 @@ import { buildGridText, buildThresholdPreview, extractRegionPreview } from './de
 import { buildEntry, createEmptyDraft, fileToDataUrl, guessPokemonName, summarizeCollection } from './lib'
 import { matchSignature } from './matcher'
 import { detectHighContrastRegion, drawOverlay, findHighContrastRegion, sampleFrame, tryDecode } from './scanner'
+import { analyzeImageSource } from './static-debug'
 import type { PickEntry, ScanDraft } from './types'
 
 function App() {
@@ -19,6 +20,9 @@ function App() {
   const [debugThresholdA, setDebugThresholdA] = useState('')
   const [debugThresholdB, setDebugThresholdB] = useState('')
   const [debugGrid, setDebugGrid] = useState('')
+  const [staticSource, setStaticSource] = useState('/jared-sample-001.jpg')
+  const [staticStatus, setStaticStatus] = useState('Ready')
+  const [staticDecodedText, setStaticDecodedText] = useState('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -27,6 +31,7 @@ function App() {
 
   useEffect(() => {
     void refreshEntries()
+    void runStaticAnalysis('/jared-sample-001.jpg')
     return () => stopScanner()
   }, [])
 
@@ -43,6 +48,7 @@ function App() {
     nextDraft.pokemonName = guessPokemonName(file.name)
     setDraft(nextDraft)
     setError('')
+    await runStaticAnalysis(imageDataUrl)
   }
 
   async function handleSave() {
@@ -133,10 +139,6 @@ function App() {
       } else {
         setScannerStatus('Looking for the symbol…')
         setScannerMatch('')
-        setDebugCrop('')
-        setDebugThresholdA('')
-        setDebugThresholdB('')
-        setDebugGrid('')
       }
     }
 
@@ -152,6 +154,23 @@ function App() {
     const nextDraft = createEmptyDraft(dataUrl, detected?.signature ?? '')
     setDraft(nextDraft)
     setScannerStatus('Frame captured')
+    await runStaticAnalysis(dataUrl)
+  }
+
+  async function runStaticAnalysis(source: string) {
+    setStaticSource(source)
+    setStaticStatus('Analyzing static image…')
+    try {
+      const result = await analyzeImageSource(source)
+      setStaticDecodedText(result.decodedText)
+      setDebugCrop(result.crop)
+      setDebugThresholdA(result.threshold96)
+      setDebugThresholdB(result.threshold144)
+      setDebugGrid(result.grid)
+      setStaticStatus(result.status)
+    } catch (err) {
+      setStaticStatus(err instanceof Error ? err.message : 'Static analysis failed')
+    }
   }
 
   const filteredEntries = useMemo(() => {
@@ -172,9 +191,9 @@ function App() {
       <section className="hero card">
         <div>
           <p className="eyebrow">Frienda Home</p>
-          <h1>Debug the symbol live.</h1>
+          <h1>Debug the symbol live or static.</h1>
           <p className="hero-copy">
-            Real-time camera scanner plus a debug panel that shows the detected crop, thresholded views, and a coarse 16×16 bit grid.
+            Uploaded images now get the same crop, threshold, and grid analysis as the live scanner. Your sample image is preloaded as test data.
           </p>
         </div>
         <label className="upload-box">
@@ -201,6 +220,24 @@ function App() {
           <video ref={videoRef} className="scanner-video" playsInline muted />
           <canvas ref={overlayCanvasRef} className="scanner-overlay" />
           <canvas ref={captureCanvasRef} className="hidden-canvas" />
+        </div>
+      </section>
+
+      <section className="card scanner-section">
+        <div className="scanner-header">
+          <div>
+            <p className="eyebrow">Static test image</p>
+            <h2>Analyze one photo without using the camera</h2>
+            <p className="scanner-status">{staticStatus}</p>
+            {staticDecodedText ? <p className="scanner-match">Decoded text: {staticDecodedText}</p> : null}
+          </div>
+          <div className="actions">
+            <button className="secondary" onClick={() => void runStaticAnalysis('/jared-sample-001.jpg')}>Use Jared sample</button>
+            <button onClick={() => void runStaticAnalysis(staticSource)}>Re-run analysis</button>
+          </div>
+        </div>
+        <div className="static-source-wrap">
+          <img src={staticSource} alt="Static source" className="static-source-image" />
         </div>
       </section>
 

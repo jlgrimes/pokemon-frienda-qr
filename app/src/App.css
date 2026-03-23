@@ -153,6 +153,20 @@ textarea {
   display: none;
 }
 
+.static-source-wrap {
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid rgba(114, 136, 214, 0.2);
+  background: #050814;
+}
+
+.static-source-image {
+  width: 100%;
+  display: block;
+  max-height: 420px;
+  object-fit: contain;
+}
+
 .debug-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
