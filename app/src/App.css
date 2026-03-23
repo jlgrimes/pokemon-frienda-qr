@@ -265,6 +265,10 @@ textarea {
   gap: 0.75rem;
 }
 
+.sample-actions {
+  flex-wrap: wrap;
+}
+
 .error {
   color: #ff9f9f;
   margin: 0;

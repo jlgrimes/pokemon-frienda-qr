@@ -21,6 +21,10 @@ function App() {
   const [debugThresholdB, setDebugThresholdB] = useState('')
   const [debugGrid, setDebugGrid] = useState('')
   const [staticSource, setStaticSource] = useState('/jared-sample-001.jpg')
+  const builtInSamples = [
+    { label: 'Shaymin', source: '/jared-sample-001.jpg' },
+    { label: 'Excadrill', source: '/excadrill-001.jpg' },
+  ]
   const [staticStatus, setStaticStatus] = useState('Ready')
   const [staticDecodedText, setStaticDecodedText] = useState('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -193,7 +197,7 @@ function App() {
           <p className="eyebrow">Frienda Home</p>
           <h1>Debug the symbol live or static.</h1>
           <p className="hero-copy">
-            Uploaded images now get the same crop, threshold, and grid analysis as the live scanner. Your sample image is preloaded as test data.
+            Uploaded images now get the same crop, threshold, and grid analysis as the live scanner. Shaymin and Excadrill are both preloaded as test data.
           </p>
         </div>
         <label className="upload-box">
@@ -231,8 +235,12 @@ function App() {
             <p className="scanner-status">{staticStatus}</p>
             {staticDecodedText ? <p className="scanner-match">Decoded text: {staticDecodedText}</p> : null}
           </div>
-          <div className="actions">
-            <button className="secondary" onClick={() => void runStaticAnalysis('/jared-sample-001.jpg')}>Use Jared sample</button>
+          <div className="actions sample-actions">
+            {builtInSamples.map((sample) => (
+              <button key={sample.source} className="secondary" onClick={() => void runStaticAnalysis(sample.source)}>
+                Use {sample.label}
+              </button>
+            ))}
             <button onClick={() => void runStaticAnalysis(staticSource)}>Re-run analysis</button>
           </div>
         </div>
