@@ -1,0 +1,275 @@
+:root {
+  color: #f5f7ff;
+  background: #0b1020;
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(81, 123, 255, 0.28), transparent 30%),
+    linear-gradient(180deg, #0b1020 0%, #11172a 100%);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+  background: #6285ff;
+  color: white;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #29324d;
+}
+
+button.ghost {
+  padding: 0;
+  background: transparent;
+  color: #9bb0ff;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid #2a3554;
+  background: #121a30;
+  color: #f5f7ff;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+}
+
+.app-shell {
+  width: min(1180px, calc(100vw - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.card {
+  background: rgba(16, 23, 42, 0.86);
+  border: 1px solid rgba(114, 136, 214, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.5fr minmax(220px, 280px);
+  gap: 1.25rem;
+  padding: 1.5rem;
+  align-items: center;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9bb0ff;
+  font-size: 0.76rem;
+  margin: 0 0 0.4rem;
+}
+
+.hero h1,
+.collection-header h2 {
+  margin: 0;
+}
+
+.hero-copy {
+  max-width: 58ch;
+  color: #b8c4ea;
+}
+
+.upload-box {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  padding: 1.2rem;
+  border-radius: 18px;
+  border: 1px dashed #4860aa;
+  background: rgba(98, 133, 255, 0.08);
+}
+
+.upload-box input {
+  padding: 0.4rem;
+  border: 0;
+  background: transparent;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.stat-card {
+  padding: 1rem 1.2rem;
+}
+
+.stat-card p {
+  margin: 0 0 0.25rem;
+  color: #9dafdb;
+}
+
+.stat-card strong {
+  font-size: 2rem;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.preview {
+  width: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  background: #0c1224;
+  min-height: 240px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field span {
+  color: #c1cbeb;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.error {
+  color: #ff9f9f;
+  margin: 0;
+}
+
+.collection-section {
+  padding: 1.25rem;
+}
+
+.collection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search {
+  max-width: 320px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.pick-card {
+  overflow: hidden;
+  border-radius: 20px;
+  background: #10172b;
+  border: 1px solid rgba(135, 154, 223, 0.18);
+}
+
+.pick-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.pick-card-body {
+  padding: 1rem;
+}
+
+.pick-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.pick-card-header h3,
+.pick-card-header p,
+.notes,
+dl {
+  margin: 0;
+}
+
+.pick-card-header p,
+.notes,
+dt {
+  color: #9dafdb;
+}
+
+dl {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.empty-state {
+  padding: 2rem;
+  border-radius: 18px;
+  border: 1px dashed #44537f;
+  color: #9dafdb;
+}
+
+@media (max-width: 860px) {
+  .hero,
+  .editor-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search {
+    max-width: none;
+  }
+}
