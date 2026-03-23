@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { deletePick, listPicks, savePick } from './db'
+import { buildGridText, buildThresholdPreview, extractRegionPreview } from './debug'
 import { buildEntry, createEmptyDraft, fileToDataUrl, guessPokemonName, summarizeCollection } from './lib'
 import { matchSignature } from './matcher'
-import { detectHighContrastRegion, drawOverlay, sampleFrame, tryDecode } from './scanner'
+import { detectHighContrastRegion, drawOverlay, findHighContrastRegion, sampleFrame, tryDecode } from './scanner'
 import type { PickEntry, ScanDraft } from './types'
 
 function App() {
@@ -14,6 +15,10 @@ function App() {
   const [query, setQuery] = useState('')
   const [scannerStatus, setScannerStatus] = useState('Camera idle')
   const [scannerMatch, setScannerMatch] = useState<string>('')
+  const [debugCrop, setDebugCrop] = useState('')
+  const [debugThresholdA, setDebugThresholdA] = useState('')
+  const [debugThresholdB, setDebugThresholdB] = useState('')
+  const [debugGrid, setDebugGrid] = useState('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -105,6 +110,15 @@ function App() {
     overlayCanvas.height = sampled.height
 
     const decoded = tryDecode(sampled.image)
+    const region = findHighContrastRegion(sampled.image)
+
+    if (region) {
+      setDebugCrop(extractRegionPreview(sampled.image, region))
+      setDebugThresholdA(buildThresholdPreview(sampled.image, region, 96))
+      setDebugThresholdB(buildThresholdPreview(sampled.image, region, 144))
+      setDebugGrid(buildGridText(sampled.image, region, 16))
+    }
+
     if (decoded) {
       drawOverlay(overlayCanvas, decoded.points)
       setScannerStatus(`Decoded text: ${decoded.text}`)
@@ -119,6 +133,10 @@ function App() {
       } else {
         setScannerStatus('Looking for the symbol…')
         setScannerMatch('')
+        setDebugCrop('')
+        setDebugThresholdA('')
+        setDebugThresholdB('')
+        setDebugGrid('')
       }
     }
 
@@ -154,9 +172,9 @@ function App() {
       <section className="hero card">
         <div>
           <p className="eyebrow">Frienda Home</p>
-          <h1>Scan your guys live.</h1>
+          <h1>Debug the symbol live.</h1>
           <p className="hero-copy">
-            Browser camera scanner with direct QR attempts first, then a fallback visual signature matcher for the weird Frienda symbol.
+            Real-time camera scanner plus a debug panel that shows the detected crop, thresholded views, and a coarse 16×16 bit grid.
           </p>
         </div>
         <label className="upload-box">
@@ -184,6 +202,25 @@ function App() {
           <canvas ref={overlayCanvasRef} className="scanner-overlay" />
           <canvas ref={captureCanvasRef} className="hidden-canvas" />
         </div>
+      </section>
+
+      <section className="debug-grid">
+        <article className="card debug-card">
+          <p className="eyebrow">Detected crop</p>
+          {debugCrop ? <img src={debugCrop} alt="Detected symbol crop" className="debug-image" /> : <div className="empty-state">No crop yet</div>}
+        </article>
+        <article className="card debug-card">
+          <p className="eyebrow">Threshold 96</p>
+          {debugThresholdA ? <img src={debugThresholdA} alt="Threshold preview 96" className="debug-image pixelated" /> : <div className="empty-state">No threshold yet</div>}
+        </article>
+        <article className="card debug-card">
+          <p className="eyebrow">Threshold 144</p>
+          {debugThresholdB ? <img src={debugThresholdB} alt="Threshold preview 144" className="debug-image pixelated" /> : <div className="empty-state">No threshold yet</div>}
+        </article>
+        <article className="card debug-card debug-card-wide">
+          <p className="eyebrow">16×16 coarse grid</p>
+          <pre className="grid-text">{debugGrid || 'No grid yet'}</pre>
+        </article>
       </section>
 
       <section className="stats-grid">

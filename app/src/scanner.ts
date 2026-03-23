@@ -7,6 +7,12 @@ export type ScanResult = {
   signature?: string
 }
 
+export type RegionBox = {
+  left: number
+  top: number
+  size: number
+}
+
 export function sampleFrame(video: HTMLVideoElement, canvas: HTMLCanvasElement) {
   const width = video.videoWidth
   const height = video.videoHeight
@@ -42,6 +48,24 @@ export function tryDecode(image: ImageData): ScanResult | null {
 }
 
 export function detectHighContrastRegion(image: ImageData): ScanResult | null {
+  const box = findHighContrastRegion(image)
+  if (!box) return null
+
+  const signature = buildSignature(image, box.left, box.top, box.size)
+
+  return {
+    kind: 'detected',
+    points: [
+      { x: box.left, y: box.top },
+      { x: box.left + box.size, y: box.top },
+      { x: box.left + box.size, y: box.top + box.size },
+      { x: box.left, y: box.top + box.size },
+    ],
+    signature,
+  }
+}
+
+export function findHighContrastRegion(image: ImageData): RegionBox | null {
   const { width, height, data } = image
   const block = 8
   const blocksX = Math.floor(width / block)
@@ -74,18 +98,7 @@ export function detectHighContrastRegion(image: ImageData): ScanResult | null {
   const size = Math.min(220, width, height)
   const left = clamp(best.x - size / 2, 0, width - size)
   const top = clamp(best.y - size / 2, 0, height - size)
-  const signature = buildSignature(image, left, top, size)
-
-  return {
-    kind: 'detected',
-    points: [
-      { x: left, y: top },
-      { x: left + size, y: top },
-      { x: left + size, y: top + size },
-      { x: left, y: top + size },
-    ],
-    signature,
-  }
+  return { left, top, size }
 }
 
 function buildSignature(image: ImageData, left: number, top: number, size: number) {
