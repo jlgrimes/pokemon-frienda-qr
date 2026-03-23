@@ -6,6 +6,7 @@ export type PickEntry = {
   grade: string
   notes: string
   imageDataUrl: string
+  signature?: string
   createdAt: string
 }
 

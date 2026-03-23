@@ -10,7 +10,7 @@ const draftSchema = z.object({
   imageDataUrl: z.string().min(1),
 })
 
-export function createEmptyDraft(imageDataUrl: string): ScanDraft {
+export function createEmptyDraft(imageDataUrl: string, signature = ''): ScanDraft {
   return {
     nickname: '',
     pokemonName: '',
@@ -18,6 +18,7 @@ export function createEmptyDraft(imageDataUrl: string): ScanDraft {
     grade: '',
     notes: '',
     imageDataUrl,
+    signature,
   }
 }
 

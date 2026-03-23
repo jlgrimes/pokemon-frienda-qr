@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { deletePick, listPicks, savePick } from './db'
 import { buildEntry, createEmptyDraft, fileToDataUrl, guessPokemonName, summarizeCollection } from './lib'
+import { matchSignature } from './matcher'
+import { detectHighContrastRegion, drawOverlay, sampleFrame, tryDecode } from './scanner'
 import type { PickEntry, ScanDraft } from './types'
 
 function App() {
@@ -10,9 +12,17 @@ function App() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [query, setQuery] = useState('')
+  const [scannerStatus, setScannerStatus] = useState('Camera idle')
+  const [scannerMatch, setScannerMatch] = useState<string>('')
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const frameLoopRef = useRef<number | null>(null)
 
   useEffect(() => {
     void refreshEntries()
+    return () => stopScanner()
   }, [])
 
   async function refreshEntries() {
@@ -50,6 +60,82 @@ function App() {
     await refreshEntries()
   }
 
+  async function startScanner() {
+    try {
+      stopScanner()
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false,
+      })
+      streamRef.current = stream
+      const video = videoRef.current
+      if (!video) return
+      video.srcObject = stream
+      await video.play()
+      setScannerStatus('Scanning… point the weird code at the camera')
+      tickScanner()
+    } catch (err) {
+      setScannerStatus('Camera failed to start')
+      setError(err instanceof Error ? err.message : 'Camera access failed')
+    }
+  }
+
+  function stopScanner() {
+    if (frameLoopRef.current) cancelAnimationFrame(frameLoopRef.current)
+    frameLoopRef.current = null
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    const overlay = overlayCanvasRef.current
+    if (overlay) drawOverlay(overlay)
+  }
+
+  function tickScanner() {
+    const video = videoRef.current
+    const captureCanvas = captureCanvasRef.current
+    const overlayCanvas = overlayCanvasRef.current
+    if (!video || !captureCanvas || !overlayCanvas) return
+
+    const sampled = sampleFrame(video, captureCanvas)
+    if (!sampled) {
+      frameLoopRef.current = requestAnimationFrame(tickScanner)
+      return
+    }
+
+    overlayCanvas.width = sampled.width
+    overlayCanvas.height = sampled.height
+
+    const decoded = tryDecode(sampled.image)
+    if (decoded) {
+      drawOverlay(overlayCanvas, decoded.points)
+      setScannerStatus(`Decoded text: ${decoded.text}`)
+      setScannerMatch('')
+    } else {
+      const detected = detectHighContrastRegion(sampled.image)
+      drawOverlay(overlayCanvas, detected?.points)
+      if (detected?.signature) {
+        const match = matchSignature(detected.signature, entries)
+        setScannerStatus('Detected a likely code region')
+        setScannerMatch(match ? `${match.entry.pokemonName || 'Unknown'} (${Math.round(match.score * 100)}% match)` : 'No catalog match yet')
+      } else {
+        setScannerStatus('Looking for the symbol…')
+        setScannerMatch('')
+      }
+    }
+
+    frameLoopRef.current = requestAnimationFrame(tickScanner)
+  }
+
+  async function captureFromScanner() {
+    const captureCanvas = captureCanvasRef.current
+    if (!captureCanvas) return
+    const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.92)
+    const sampled = captureCanvas.getContext('2d', { willReadFrequently: true })?.getImageData(0, 0, captureCanvas.width, captureCanvas.height)
+    const detected = sampled ? detectHighContrastRegion(sampled) : null
+    const nextDraft = createEmptyDraft(dataUrl, detected?.signature ?? '')
+    setDraft(nextDraft)
+    setScannerStatus('Frame captured')
+  }
+
   const filteredEntries = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     if (!normalized) return entries
@@ -68,15 +154,36 @@ function App() {
       <section className="hero card">
         <div>
           <p className="eyebrow">Frienda Home</p>
-          <h1>Store your guys.</h1>
+          <h1>Scan your guys live.</h1>
           <p className="hero-copy">
-            Upload a pick photo, label it, and keep a personal local collection. Decoder research can come later.
+            Browser camera scanner with direct QR attempts first, then a fallback visual signature matcher for the weird Frienda symbol.
           </p>
         </div>
         <label className="upload-box">
-          <span>Pick a photo</span>
+          <span>Upload a photo instead</span>
           <input type="file" accept="image/*" onChange={handleFileChange} />
         </label>
+      </section>
+
+      <section className="card scanner-section">
+        <div className="scanner-header">
+          <div>
+            <p className="eyebrow">Live scanner</p>
+            <h2>Point the camera at the back code</h2>
+            <p className="scanner-status">{scannerStatus}</p>
+            {scannerMatch ? <p className="scanner-match">{scannerMatch}</p> : null}
+          </div>
+          <div className="actions">
+            <button className="secondary" onClick={stopScanner}>Stop</button>
+            <button onClick={() => void startScanner()}>Start camera</button>
+            <button onClick={() => void captureFromScanner()}>Capture frame</button>
+          </div>
+        </div>
+        <div className="scanner-stage">
+          <video ref={videoRef} className="scanner-video" playsInline muted />
+          <canvas ref={overlayCanvasRef} className="scanner-overlay" />
+          <canvas ref={captureCanvasRef} className="hidden-canvas" />
+        </div>
       </section>
 
       <section className="stats-grid">
@@ -136,6 +243,7 @@ function App() {
                   <dl>
                     <div><dt>Series</dt><dd>{entry.series || '—'}</dd></div>
                     <div><dt>Grade</dt><dd>{entry.grade || '—'}</dd></div>
+                    <div><dt>Signature</dt><dd>{entry.signature ? 'Saved' : '—'}</dd></div>
                     <div><dt>Saved</dt><dd>{new Date(entry.createdAt).toLocaleString()}</dd></div>
                   </dl>
                   {entry.notes ? <p className="notes">{entry.notes}</p> : null}
@@ -145,7 +253,7 @@ function App() {
           </div>
         ) : (
           <div className="empty-state">
-            <p>No picks yet. Upload your first one and start building the box.</p>
+            <p>No picks yet. Upload or capture one and start building the box.</p>
           </div>
         )}
       </section>
