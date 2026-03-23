@@ -38,7 +38,7 @@ export async function analyzeImageSource(source: string): Promise<StaticDebugRes
     }
   }
 
-  const detected = buildGridText(imageData, region, 16)
+  const detected = buildGridText(imageData, region, 12)
   const signature = detected.replace(/\s+/g, '')
 
   return {

@@ -255,7 +255,7 @@ function App() {
           {debugThresholdB ? <img src={debugThresholdB} alt="Threshold preview 144" className="debug-image pixelated" /> : <div className="empty-state">No threshold yet</div>}
         </article>
         <article className="card debug-card debug-card-wide">
-          <p className="eyebrow">16×16 coarse grid</p>
+          <p className="eyebrow">12×12 grid</p>
           <pre className="grid-text">{debugGrid || 'No grid yet'}</pre>
         </article>
       </section>
