@@ -17,12 +17,12 @@ export type FinderMatch = {
 }
 
 export function findFinderAnchoredRegion(image: ImageData): FinderMatch | null {
-  const scales = [96, 108, 120, 132, 144, 156, 168, 180, 192, 204, 216, 228]
-  const thresholds = [80, 96, 112, 128, 144, 160, 176]
+  const scales = [108, 132, 156, 180, 204]
+  const thresholds = [96, 128, 160]
   let best: FinderMatch | null = null
 
   for (const size of scales) {
-    const step = Math.max(6, Math.floor(size / 12 / 2))
+    const step = Math.max(12, Math.floor(size / 12))
     for (let top = 0; top <= image.height - size; top += step) {
       for (let left = 0; left <= image.width - size; left += step) {
         const box = { left, top, size }

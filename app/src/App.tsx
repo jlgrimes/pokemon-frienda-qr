@@ -25,7 +25,7 @@ function App() {
     { label: 'Shaymin', source: '/jared-sample-001.jpg' },
     { label: 'Excadrill', source: '/excadrill-001.jpg' },
   ]
-  const [staticStatus, setStaticStatus] = useState('Ready')
+  const [staticStatus, setStaticStatus] = useState('Ready — choose a sample or upload an image')
   const [staticDecodedText, setStaticDecodedText] = useState('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null)
